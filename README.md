@@ -10,9 +10,10 @@ A command-line interface (CLI) tool to fetch and visualize download statistics f
 
 ## Installation
 
-To install the CLI globally, run the following command:
+To install the CLI globally, first build, then install the package as a global dependency:
 
 ```bash
+npm run build
 npm install -g .
 ```
 
