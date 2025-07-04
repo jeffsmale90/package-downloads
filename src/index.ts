@@ -9,7 +9,7 @@ async function getStats() {
     .argument("<packageName>", "npm package name")
     .argument(
       "[granularity]",
-      "Data granularity (daily, weekly, monthly)",
+      "Data granularity (daily, weekly, monthly, 7day-avg)",
       "daily"
     )
     .option("-n, --num-points <number>", "Number of data points to chart", "60")
@@ -90,9 +90,15 @@ async function runStats(
       ); // Fetch daily for aggregation
       apiRange = `${startDateApi}:${endDateApi}`;
       break;
+    case "7day-avg":
+      startDateApi = formatDateForApi(
+        calculateStartDate(today, numPoints + 6, "days")
+      ); // Fetch extra days for rolling average calculation
+      apiRange = `${startDateApi}:${endDateApi}`;
+      break;
     default:
       console.error(
-        "Invalid granularity. Choose from: daily, weekly, monthly."
+        "Invalid granularity. Choose from: daily, weekly, monthly, 7day-avg."
       );
       process.exit(1);
   }
@@ -143,6 +149,10 @@ async function runStats(
         processedPeriods = aggregated.map((entry) => entry.period);
       } else if (granularity === "monthly") {
         const aggregated = aggregateToMonths(data.downloads);
+        processedDownloads = aggregated.map((entry) => entry.downloads);
+        processedPeriods = aggregated.map((entry) => entry.period);
+      } else if (granularity === "7day-avg") {
+        const aggregated = calculateRollingAverage(data.downloads, 7);
         processedDownloads = aggregated.map((entry) => entry.downloads);
         processedPeriods = aggregated.map((entry) => entry.period);
       }
@@ -206,6 +216,10 @@ async function runStats(
           const month = (date.getMonth() + 1).toString().padStart(2, "0");
           const year = date.getFullYear().toString().substring(2);
           return `${month}/${year}`;
+        } else if (type === "7day-avg") {
+          const month = (date.getMonth() + 1).toString().padStart(2, "0");
+          const day = date.getDate().toString().padStart(2, "0");
+          return `${month}/${day}`;
         }
         return periodString; // Fallback
       };
@@ -314,6 +328,34 @@ function aggregateToMonths(
   return Object.keys(monthlyData)
     .sort()
     .map((key) => ({ period: key, downloads: monthlyData[key] }));
+}
+
+function calculateRollingAverage(
+  dailyDownloads: { day: string; downloads: number }[],
+  windowSize: number
+): { period: string; downloads: number }[] {
+  const result: { period: string; downloads: number }[] = [];
+  
+  // Sort by date to ensure proper order
+  const sortedData = dailyDownloads.sort((a, b) => new Date(a.day).getTime() - new Date(b.day).getTime());
+  
+  // Calculate rolling average for each day starting from the windowSize-th day
+  for (let i = windowSize - 1; i < sortedData.length; i++) {
+    let sum = 0;
+    
+    // Sum the downloads for the current window
+    for (let j = i - windowSize + 1; j <= i; j++) {
+      sum += sortedData[j].downloads;
+    }
+    
+    const average = sum / windowSize;
+    result.push({
+      period: sortedData[i].day,
+      downloads: Math.round(average) // Round to nearest integer for cleaner display
+    });
+  }
+  
+  return result;
 }
 
 getStats();
