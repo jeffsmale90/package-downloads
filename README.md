@@ -5,6 +5,7 @@ A command-line interface (CLI) tool to fetch and visualize download statistics f
 ## Features
 
 *   Get daily, weekly, or monthly download counts for any npm package.
+*   Get 7-day rolling average to smooth out daily fluctuations and show trends.
 *   Visualize download trends over a specified number of data points.
 *   Displays basic package metadata (description, latest version, homepage).
 
@@ -28,7 +29,7 @@ package-downloads <packageName> [granularity] [options]
 ### Arguments
 
 *   `<packageName>`: The name of the npm package you want to get statistics for (e.g., `express`, `react`). (Required)
-*   `[granularity]`: The data granularity. Can be `daily`, `weekly`, or `monthly`. Defaults to `daily`. (Optional)
+*   `[granularity]`: The data granularity. Can be `daily`, `weekly`, `monthly`, or `7day-avg`. Defaults to `daily`. (Optional)
 
 ### Options
 
@@ -52,6 +53,12 @@ package-downloads lodash weekly -n 10
 
 ```bash
 package-downloads vue monthly -n 5
+```
+
+### Get 7-day rolling average for 'axios' for the last 30 days
+
+```bash
+package-downloads axios 7day-avg -n 30
 ```
 
 ### Get help
